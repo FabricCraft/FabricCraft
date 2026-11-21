@@ -1,0 +1,6 @@
+/target/
+*.swp
+.DS_Store
+
+# Restricted research datasets; never publish
+materials/local-research/

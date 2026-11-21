@@ -1,0 +1,12 @@
+version = 4
+
+[[package]]
+name = "fabriccraft-cli"
+version = "0.0.1"
+dependencies = [
+ "fabriccraft-core",
+]
+
+[[package]]
+name = "fabriccraft-core"
+version = "0.0.1"

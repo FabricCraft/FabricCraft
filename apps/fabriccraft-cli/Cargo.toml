@@ -1,0 +1,11 @@
+[package]
+name = "fabriccraft-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+fabriccraft-core = { path = "../../crates/fabriccraft-core" }
+
+[lints]
+workspace = true

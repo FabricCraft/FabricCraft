@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.1-draft",
+  "id": "satin",
+  "display_name": "Satin",
+  "category": "satin",
+  "construction": "woven",
+  "composition": null,
+  "status": "demonstration",
+  "source": {
+    "type": "illustrative",
+    "note": "No measured physical values; not derived from T2P"
+  },
+  "license": "MIT OR Apache-2.0",
+  "measurement_conditions": null,
+  "physical_properties": {
+    "areal_density_kg_m2": null,
+    "thickness_m": null,
+    "warp_tensile_curve": null,
+    "weft_tensile_curve": null,
+    "shear_response": null,
+    "bending_response": null,
+    "friction": null,
+    "damping": null
+  }
+}
