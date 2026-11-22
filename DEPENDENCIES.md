@@ -2,6 +2,8 @@
 
 No research candidate is an approved dependency until its current repository, revision, license, relevant subcomponents, transitive dependencies, maintenance status, portability, and API have been inspected. Record the findings in `docs/research/` with upstream links and pinned commits.
 
+The [research index](docs/research/README.md) links to the completed reference-import and flattening probes.
+
 ## Candidates to evaluate
 
 - SolidCraft / SolidCore: optional import of existing CAD reference models, with code and brand licensing boundaries checked against the exact upstream revision.

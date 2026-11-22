@@ -2,7 +2,7 @@
 
 **Status: pre-alpha / architecture and research. No working pattern-generation engine yet.**
 
-FabricCraft is a community-driven, open-source project for designing fabric panels and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. For fitted work, an existing 3D model supplies the reference shape. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
+FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. Create and edit the reference model in your CAD application, then bring it into FabricCraft to design the fabric. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
 
 ## Principles
 - Accuracy and validated manufacturing output over speed.

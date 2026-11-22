@@ -1,0 +1,36 @@
+# Flattening candidates and mathematical checks
+
+The first fabric workflow starts from a mesh exported from CAD. A fabric panel selects a patch of that mesh. Flattening produces a 2D map of the patch for pattern design. The analytic tests here measure how well that map preserves lengths and areas.
+
+## Methods and reusable implementations
+
+| Candidate | Pinned implementation and dependency boundary | Decision |
+| --- | --- | --- |
+| geometry-central 1.1.0 | MIT. The probe uses Boundary First Flattening (BFF), Eigen 3.4.0 in MPL-2.0-only mode and SuiteSparse disabled. The checkout includes happly (MIT, `88f79725d32d78e0e637ebf42d8432d519e1c7d0`), NanoRT (MIT) and nanoflann (BSD-2-Clause). | Lead candidate for an isolated adapter experiment. Its boundary scale and angle controls matter for fabric panel edges. [Pin](https://github.com/nmwsharp/geometry-central/tree/1e8e43d2d50b18c98ea0b4a53ffaf5848dbaaa26) · [BFF API](https://geometry-central.net/surface/algorithms/parameterization/) |
+| libigl 2.6.0 | The tested header-only `igl::lscm` path is MPL-2.0 and uses Eigen 3.4.0. Optional GPL components were disabled for the probe. MPL-covered files and their changes carry their own terms. | Keep as an independent baseline. Two fixed vertices anchor position, orientation, and scale when their separation is expressed in millimetres. [Pin](https://github.com/libigl/libigl/tree/40e7900ccbd767f1f360e0eb10f0f1a6432e0993) · [LSCM header](https://github.com/libigl/libigl/blob/40e7900ccbd767f1f360e0eb10f0f1a6432e0993/include/igl/lscm.h) |
+| OpenABF 2.1.0 | Apache-2.0 with a NOTICE. The tested single header uses Eigen 3.4.0 in MPL-2.0-only mode. The probe calls ABF++, followed by AngleBasedLSCM. | Keep as a comparison for angle-based initialization and as a smaller C++ integration candidate. [Pin](https://github.com/educelab/OpenABF/tree/770dcf3da345a73c126c1bc289862d20e21fe608) · [Notice](https://github.com/educelab/OpenABF/blob/770dcf3da345a73c126c1bc289862d20e21fe608/NOTICE) |
+
+The probes used Eigen 3.4.0 at `3147391d946bb4b6c68edd901f2add6ac1f31f8c`. Any integration needs review of the exact source and linked objects, with applicable notices and source obligations. The current Rust workspace has zero external packages. [Eigen licensing files](https://gitlab.com/libeigen/eigen/-/tree/3147391d946bb4b6c68edd901f2add6ac1f31f8c)
+
+## Analytic measurements
+
+The probe used double precision on Windows GNU with Clang 23.1.6. It generated a 60 × 40 mm rectangle with a central vertex, the open lateral faces of an 8-sided cylinder of radius 25 mm and height 60 mm, and the lateral faces of an 8-sided cone of radius 25 mm and height 80 mm. It duplicated each cut's rim vertices. The cylinder develops into a rectangle with width `8 × 2 × 25 sin(π/8)`. The cone develops into a fan of eight congruent triangles sharing the apex. The straight mesh edges connect sampled points, so the circumference reference is the sum of their chord lengths.
+
+The table reports the maximum absolute error across all output triangle edges after scaling each map to one reference edge. On the three developable fixtures that factor was 1 to nine significant digits. Their largest raw edge difference was `8.32e-12` in the same coordinate scale, their largest paired seam mismatch was `6.90e-13 mm` rounded up, and their largest fractional area error was `2.32e-13` rounded up. Every output face had positive signed area. Global overlap and performance remain to be measured.
+
+| Method | Rectangle (mm) | Cylinder (mm) | Cone (mm) | Hemisphere fan (mm) |
+| --- | ---: | ---: | ---: | ---: |
+| geometry-central BFF | 8.31e-12 | 1.56e-13 | 1.99e-13 | 7.93 |
+| libigl LSCM | 7.11e-15 | 2.91e-13 | 5.68e-14 | 14.77 |
+| OpenABF ABF++ and AngleBasedLSCM | 1.42e-14 | 7.32e-13 | 7.11e-14 | 7.93 |
+
+The hemisphere fan uses eight equator vertices and one north pole on a sphere of radius 25 mm. The interior angle deficit was 1.899 radians. After matching a single pole-to-rim edge length, the maximum per-face area deviations were 35.7% for BFF and OpenABF and 46.7% for LSCM. These results depend on the selected edge and parameterization settings. They illustrate where a one-piece isometric model breaks down. Candidate choice depends on broader benchmarks and how reliably failure is reported. [Probe source and commands](probes/README.md)
+
+## Mathematics that guides the next experiment
+
+- **Conformal initialization.** LSCM minimizes a discrete angle-preserving residual, with two pins removing the zero-scale and rigid freedoms. BFF gives direct control of boundary scale or angle for disk-like patches. ABF++ optimizes triangle angles under compatibility constraints. AngleBasedLSCM reconstructs a planar map from those angles. [LSCM](https://brunolevy.github.io/papers/LSCM_SIGGRAPH_2002.pdf) · [BFF](https://arxiv.org/abs/1704.06873) · [ABF++ reference and implementation](https://github.com/educelab/OpenABF/tree/770dcf3da345a73c126c1bc289862d20e21fe608)
+- **Distortion.** For each triangle, use its two 2D pattern edge vectors as columns of `P` and its corresponding 3D edge vectors expressed in the triangle's oriented tangent frame as columns of `T`. Then `F = T P⁻¹` maps flat pattern displacements to the target. Its singular values give principal stretch ratios, and its determinant gives the signed area ratio. In a specified orthonormal grain frame `g_w, g_f`, use `||F g_w|| - 1` and `||F g_f|| - 1` for directional stretch. The angle between `F g_w` and `F g_f` measures shear. Any eventual conversion into stress or energy requires measured material parameters.
+- **Manufacturing constraints.** Keep seam endpoints paired by source identity, then measure deformed arc length and corresponding registration marks along each seam. Track maximum error in millimetres alongside dimensionless stretch, area and angular shear. Reject triangle inversions and test for overlap of nonadjacent triangles and self-intersecting panel boundaries. Local injectivity and global overlap are separate checks. SLIM provides a published local refinement method that starts from a locally injective map. [SLIM paper](https://igl.ethz.ch/projects/slim/SLIM2017.pdf)
+- **Curvature and textile behavior.** At an interior vertex of an isometric planar development, triangle angles sum to `2π`. A triangulated hemisphere with positive angle deficit cannot meet that condition while preserving every edge length and keeping a single panel around that vertex. A fabric workflow can allow controlled distortion or introduce seams and darts. The garment-pattern paper by Pietroni et al. is a direct reference for grain, seam and anisotropy. Its accompanying code repository has no verified reuse license at the reviewed revision, so the paper is the research source. [Peer-reviewed paper](https://doi.org/10.1145/3528223.3530145) · [Companion repository](https://github.com/nicopietroni/parafashion/tree/99b5538e5825e7b23b1cb3541387bab4aa902274)
+
+The next benchmark should exercise rescaling, refinement, narrow triangles, and invalid input on Windows and Linux. Record convergence failures and repeatability. A thin Rust-to-C adapter can isolate a C++ implementation once a candidate justifies the build and licensing cost. Real cut-and-sew measurements belong to a separate validation stage.

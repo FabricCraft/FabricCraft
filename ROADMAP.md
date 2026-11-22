@@ -12,3 +12,7 @@ Milestones are acceptance-gated, not date commitments.
 - **M7 SolidCraft integration:** optional interchange for existing reference models, with a supported contract and compatibility tests.
 
 Each milestone requires documented tests and reproducible examples before completion.
+
+## Future garment capability
+
+Add an adjustable human mannequin as a reference for garment design. Accept user-entered body measurements with explicit units and documented measurement landmarks. Report which measurements were supplied and which dimensions come from the mannequin model. Verify that the generated reference reproduces supported measurements within documented tolerances before using it for fitting.
