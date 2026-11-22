@@ -18,6 +18,7 @@ const MAX_BOUNDARY_EDGES: usize = 4096;
 #[derive(Debug)]
 pub struct PlanarPanel {
     outline: Vec<[f64; 2]>,
+    outline_ids: Vec<VertexId>,
     size: [f64; 2],
 }
 
@@ -121,11 +122,20 @@ impl PlanarPanel {
         // winding number one inside. Overlapping triangle interiors would
         // contribute more than one.
         validate_outline(&outline)?;
-        Ok(Self { outline, size })
+        Ok(Self {
+            outline,
+            size,
+            outline_ids: boundary,
+        })
     }
 
     pub fn outline_mm(&self) -> &[[f64; 2]] {
         &self.outline
+    }
+
+    /// IDs from the panel's surface in the same order as the outline points.
+    pub fn outline_vertex_ids(&self) -> &[VertexId] {
+        &self.outline_ids
     }
 
     pub fn size_mm(&self) -> [f64; 2] {

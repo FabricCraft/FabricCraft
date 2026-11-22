@@ -1,8 +1,8 @@
 # FabricCraft
 
-**Status: pre-alpha. The CLI can export full-scale test outlines for flat surfaces and pre-cut developable mesh panels.**
+**Status: pre-alpha. The CLI exports full-scale outlines for flat and developable panels and can open an imported tube along a seam.**
 
-FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. Create and edit the reference model in your CAD application, then bring it into FabricCraft to design the fabric. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
+FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. CAD supplies the read-only reference shape. FabricCraft owns the coverage, seams and fabric panel geometry. The long-term vision combines automatic panel segmentation, material-aware flattening, and gravity-driven cloth draping.
 
 ## Principles
 - Accuracy and validated manufacturing output over speed.
@@ -59,6 +59,18 @@ cargo run --locked -p fabriccraft-cli -- develop examples/cut-cylinder.obj mm ta
 ```
 
 FabricCraft reports the largest edge and face-area errors and only exports a compatible, non-overlapping outline. If the mesh fails to close, check the cut and whether the shape can flatten without stretching. The optional fabric check uses the same millimetre width and length as the flat workflow.
+
+### Select a surface and set its seam in FabricCraft
+
+Import the complete cylinder as one triangulated OBJ object with shared mesh vertices. `surfaces` lists the two end caps first in the example. Exclude them from fabric coverage, then use `seam-vertices` to find the vertex numbers and connecting edges on the side. The seam joins the two rims and follows existing mesh edges.
+
+```sh
+cargo run --locked -p fabriccraft-cli -- surfaces examples/capped-cylinder.obj mm
+cargo run --locked -p fabriccraft-cli -- seam-vertices examples/capped-cylinder.obj mm --exclude-surfaces "1,2"
+cargo run --locked -p fabriccraft-cli -- develop examples/capped-cylinder.obj mm target/tube-panel.svg --exclude-surfaces "1,2" --seam "12,2" --fabric-mm 130 320
+```
+
+Use `--open-tube` in place of `--seam` to let FabricCraft pick the shortest mesh edge route. For a tube with open rims, omit `--exclude-surfaces`. Both operations work on the panel while keeping the CAD export intact. The SVG marks the two sides of the seam as dashed lines, records their measured mismatch, and uses zero seam allowance. The future GUI will let you choose the same coverage and seam paths on the model.
 
 The prototype accepts up to 8 MiB, 100,000 triangles, and 4,096 boundary edges. Read the [geometry contract](docs/GEOMETRY_AND_FIXTURES.md) and [dependency review](docs/research/PLANAR_DEPENDENCIES.md) for algorithms and tolerances. The five bundled fabric profiles are illustrative metadata with empty measurement fields. [Material library specification](docs/materials/MATERIAL_LIBRARY.md)
 

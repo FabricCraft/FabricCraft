@@ -8,6 +8,8 @@ use std::{
 const MODEL: &str = include_str!("../../../examples/planar-panel-200x100.obj");
 const BOX: &str = include_str!("../../../examples/reference-box.obj");
 const CUT_CYLINDER: &str = include_str!("../../../examples/cut-cylinder.obj");
+const UNCUT_CYLINDER: &str = include_str!("../../../examples/uncut-cylinder.obj");
+const CAPPED_CYLINDER: &str = include_str!("../../../examples/capped-cylinder.obj");
 
 struct Files {
     input: PathBuf,
@@ -240,5 +242,121 @@ fn develops_a_pre_cut_mesh_and_checks_the_fabric_dimensions() -> io::Result<()> 
     assert!(summary.contains("fits as drawn"));
     let svg = fs::read_to_string(&files.output)?;
     assert!(svg.contains("Usable fabric 130 mm wide by 320 mm long"));
+    Ok(())
+}
+
+#[test]
+fn keeps_the_obj_intact_and_exports_two_matching_edges_for_a_picked_seam() -> io::Result<()> {
+    let files = Files::new()?;
+    fs::write(&files.input, UNCUT_CYLINDER)?;
+    let binary = env!("CARGO_BIN_EXE_fabriccraft-cli");
+    let vertices = Command::new(binary)
+        .arg("seam-vertices")
+        .arg(&files.input)
+        .arg("mm")
+        .output()?;
+    assert!(
+        vertices.status.success(),
+        "{}",
+        String::from_utf8_lossy(&vertices.stderr)
+    );
+    let vertices = String::from_utf8_lossy(&vertices.stdout);
+    assert!(vertices.contains("2  rim  (35.355, 35.355, 0.000) mm  edges"));
+    assert!(vertices.contains("3  rim  (35.355, 35.355, 120.000) mm  edges"));
+
+    let run = |flags: &[&str]| {
+        Command::new(binary)
+            .arg("develop")
+            .arg(&files.input)
+            .arg("mm")
+            .arg(&files.output)
+            .args(flags)
+            .output()
+    };
+    let invalid = run(&["--seam", "1,2"])?;
+    assert!(!invalid.status.success());
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("one rim to the other"));
+    assert!(!files.output.exists());
+
+    let manual = run(&["--seam", "1,4", "--fabric-mm", "130", "320"])?;
+    assert!(
+        manual.status.success(),
+        "{}",
+        String::from_utf8_lossy(&manual.stderr)
+    );
+    let summary = String::from_utf8_lossy(&manual.stdout);
+    assert!(summary.contains("Seam 1,4. Source length 120.000 mm"));
+    assert!(summary.contains("120.000 × 306.147 mm"));
+    let svg = fs::read_to_string(&files.output)?;
+    assert!(svg.contains(r#"<polyline id="seam-a""#));
+    assert!(svg.contains(r#"<polyline id="seam-b""#));
+    assert!(svg.contains("Seam 1,4."));
+    assert_eq!(fs::read_to_string(&files.input)?, UNCUT_CYLINDER);
+
+    fs::remove_file(&files.output)?;
+    let automatic = run(&["--open-tube"])?;
+    assert!(
+        automatic.status.success(),
+        "{}",
+        String::from_utf8_lossy(&automatic.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&automatic.stdout).contains("Seam 2,3. Source length 120.000 mm")
+    );
+    Ok(())
+}
+
+#[test]
+fn selects_the_cylindrical_side_of_a_complete_cad_export() -> io::Result<()> {
+    let files = Files::new()?;
+    fs::write(&files.input, CAPPED_CYLINDER)?;
+    let binary = env!("CARGO_BIN_EXE_fabriccraft-cli");
+    let list = Command::new(binary)
+        .arg("surfaces")
+        .arg(&files.input)
+        .arg("mm")
+        .output()?;
+    assert!(list.status.success());
+    assert!(String::from_utf8_lossy(&list.stdout).contains("10 flat mesh patches"));
+
+    let vertices = Command::new(binary)
+        .arg("seam-vertices")
+        .arg(&files.input)
+        .arg("mm")
+        .args(["--exclude-surfaces", "1,2"])
+        .output()?;
+    assert!(
+        vertices.status.success(),
+        "{}",
+        String::from_utf8_lossy(&vertices.stderr)
+    );
+    let vertices = String::from_utf8_lossy(&vertices.stdout);
+    assert!(vertices.contains("12  rim  (50.000, 0.000, 0.000) mm"));
+    assert!(vertices.contains("2  rim  (50.000, 0.000, 120.000) mm"));
+
+    let run = |exclude| {
+        Command::new(binary)
+            .arg("develop")
+            .arg(&files.input)
+            .arg("mm")
+            .arg(&files.output)
+            .args(["--exclude-surfaces", exclude, "--seam", "12,2"])
+            .output()
+    };
+    let invalid = run("1,99")?;
+    assert!(!invalid.status.success());
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("surface 99 is out of range"));
+    assert!(!files.output.exists());
+
+    let result = run("1,2")?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let result = String::from_utf8_lossy(&result.stdout);
+    assert!(result.contains("Seam 12,2. Source length 120.000 mm"));
+    assert!(result.contains("120.000 × 306.147 mm"));
+    assert_eq!(fs::read_to_string(&files.input)?, CAPPED_CYLINDER);
     Ok(())
 }

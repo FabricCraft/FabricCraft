@@ -196,11 +196,11 @@ fn third_point([a, b, c]: [[f64; 3]; 3], p: [f64; 2], q: [f64; 2]) -> Option<[f6
     (perpendicular > 0. && corner.iter().all(|value| value.is_finite())).then_some(corner)
 }
 
-fn distance_2d(a: [f64; 2], b: [f64; 2]) -> f64 {
+pub(crate) fn distance_2d(a: [f64; 2], b: [f64; 2]) -> f64 {
     (a[0] - b[0]).hypot(a[1] - b[1])
 }
 
-fn distance_tolerance(a: [f64; 2], b: [f64; 2]) -> f64 {
+pub(crate) fn distance_tolerance(a: [f64; 2], b: [f64; 2]) -> f64 {
     let scale = a.into_iter().chain(b).map(f64::abs).fold(0., f64::max);
     ABSOLUTE_TOLERANCE_MM + scale * (128. * f64::EPSILON)
 }

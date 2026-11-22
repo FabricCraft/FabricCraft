@@ -10,11 +10,15 @@ A later garment workflow can use an adjustable human mannequin as the reference.
 
 1. Export an existing 3D model from the CAD application and import it into FabricCraft as a reference mesh. Future adapters may accept CAD files directly.
 2. Select the reference surfaces to cover and choose the desired fit (loose drape, close fit, tensioned covering).
-3. Optionally specify seams, darts, pleats, grain direction, attachments, fasteners, material, usable fabric width and length, and construction constraints.
+3. Optionally specify seams, darts, pleats, grain direction, attachments, fasteners, material, usable fabric width and length, and construction constraints. Choose coverage and edit seams in FabricCraft against the read-only reference mesh.
 4. Generate candidate panel layouts and optimize them against geometric distortion and manufacturing constraints.
 5. Flatten panels into dimensionally specified 2D sewing and cutting patterns with seam allowances, registration marks, labels, and exports.
 6. Optionally simulate fabric falling or draping over geometry under gravity, with collisions, pins, friction, and later stitched seams.
 7. Ultimately use forward cloth simulation to iteratively improve inverse-designed patterns.
+
+A future source update flow will bring revised CAD models into FabricCraft and regenerate panels whose source references still match.
+
+Geometry editing applies to the fabric. It covers selecting coverage on the reference, changing panel boundaries and seams, and adding features such as darts and seam allowances. The reference shape stays read-only during those operations.
 
 ## Core principles
 

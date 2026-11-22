@@ -22,6 +22,12 @@ impl PlanarPatch<'_> {
         self.faces.len()
     }
 
+    pub fn face_ids(&self) -> impl Iterator<Item = FaceId> + '_ {
+        self.faces
+            .iter()
+            .map(|&index| self.surface.record().faces[index].id)
+    }
+
     /// Center of the patch's 3D bounding box, in model coordinates.
     pub fn center_mm(&self) -> [f64; 3] {
         self.center_mm

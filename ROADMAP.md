@@ -9,7 +9,7 @@ Milestones are acceptance-gated, not date commitments.
 - **M4 Basic drape:** gravity, rigid obstacle collision, fixed points, friction, reproducible convergence tests.
 - **M5 Material-aware optimization:** measured warp/weft and shear properties, inverse-design iteration.
 - **M6 Advanced assembly:** darts, pleats, gathering, sewn seams, self-contact.
-- **M7 SolidCraft integration:** optional interchange for existing reference models, with a supported contract and compatibility tests.
+- **M7 SolidCraft integration:** optional interchange for existing reference models, with a supported contract, source revision updates, and compatibility tests.
 
 Each milestone requires documented tests and reproducible examples before completion.
 

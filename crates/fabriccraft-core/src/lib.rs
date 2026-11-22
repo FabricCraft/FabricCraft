@@ -3,6 +3,7 @@
 pub mod develop;
 pub mod geometry;
 pub mod planar;
+pub mod tube;
 
 /// Returns the current prototype schema version.
 pub fn schema_version() -> u32 {

@@ -5,6 +5,7 @@ use fabriccraft_core::{
     geometry::{
         Face, FaceId, ImportFrame, LengthUnit, Provenance, Surface, SurfaceId, Vertex, VertexId,
     },
+    tube::{TubeDevelopment, TubeError},
 };
 
 const SIDES: usize = 8;
@@ -175,4 +176,87 @@ fn rejects_crossing_outline_even_when_triangle_lengths_match() {
         error,
         DevelopError::Outline(fabriccraft_core::planar::PanelError::IntersectingOutline)
     ));
+}
+
+#[test]
+fn opens_a_tube_inside_fabriccraft_and_verifies_both_banks() {
+    let cylinder = cylinder(false);
+    let automatic = TubeDevelopment::from_surface(&cylinder, None).unwrap();
+    assert_eq!(automatic.source_path(), &[VertexId(0), VertexId(1)]);
+    close(automatic.source_length_mm(), HEIGHT);
+    assert!(automatic.max_paired_edge_error_mm() < 1e-9);
+    let [left, right] = automatic.banks_mm();
+    close(
+        (left[0][0] - left[1][0]).hypot(left[0][1] - left[1][1]),
+        HEIGHT,
+    );
+    close(
+        (right[0][0] - right[1][0]).hypot(right[0][1] - right[1][1]),
+        HEIGHT,
+    );
+    assert_ne!(left, right);
+
+    let selected = [VertexId(4), VertexId(5)];
+    let manual = TubeDevelopment::from_surface(&cylinder, Some(&selected)).unwrap();
+    assert_eq!(manual.source_path(), &selected);
+    close(manual.source_length_mm(), HEIGHT);
+    let mut dims = manual.development().panel().size_mm();
+    dims.sort_by(f64::total_cmp);
+    close(dims[0], HEIGHT);
+    close(
+        dims[1],
+        2. * RADIUS * (TAU / (2. * SIDES as f64)).sin() * SIDES as f64,
+    );
+    assert!(matches!(
+        DevelopedPanel::from_surface(&cylinder),
+        Err(DevelopError::ClosureMismatch { .. })
+    ));
+}
+
+#[test]
+fn validates_picked_seam_edges_and_tube_topology() {
+    let annulus = cylinder(false);
+    for path in [
+        vec![VertexId(0)],
+        vec![VertexId(0), VertexId(2)],
+        vec![VertexId(0), VertexId(7)],
+    ] {
+        assert!(matches!(
+            TubeDevelopment::from_surface(&annulus, Some(&path)),
+            Err(TubeError::InvalidPath)
+        ));
+    }
+    assert!(matches!(
+        TubeDevelopment::from_surface(&cylinder(true), None),
+        Err(TubeError::NotATube)
+    ));
+}
+
+#[test]
+fn opens_a_shortest_seam_with_an_interior_vertex() {
+    let points: Vec<_> = (0..SIDES)
+        .flat_map(|i| {
+            let top = if i == 3 { HEIGHT } else { HEIGHT + 10. };
+            [ring(i, 0.), ring(i, top / 2.), ring(i, top)]
+        })
+        .collect();
+    let triangles = (0..SIDES)
+        .flat_map(|i| {
+            let a = 3 * i;
+            let b = 3 * ((i + 1) % SIDES);
+            [
+                [a, b, b + 1],
+                [a, b + 1, a + 1],
+                [a + 1, b + 1, b + 2],
+                [a + 1, b + 2, a + 2],
+            ]
+        })
+        .collect();
+    let result = TubeDevelopment::from_surface(&mesh(points, triangles), None).unwrap();
+    assert_eq!(
+        result.source_path(),
+        &[VertexId(9), VertexId(10), VertexId(11)]
+    );
+    close(result.source_length_mm(), HEIGHT);
+    assert_eq!(result.banks_mm().map(|bank| bank.len()), [3, 3]);
 }

@@ -18,6 +18,8 @@
 //! # Ok::<(), fabriccraft_core::geometry::GeometryError>(())
 //! ```
 
+use std::collections::BTreeSet;
+
 mod adjacency;
 mod validation;
 
@@ -189,6 +191,36 @@ impl Surface {
 
     pub fn record(&self) -> &SurfaceRecord {
         &self.0
+    }
+
+    /// Build a validated selection while preserving the reference's coordinates,
+    /// provenance and selected face and vertex IDs.
+    pub fn select_faces(
+        &self,
+        mut keep: impl FnMut(FaceId) -> bool,
+    ) -> Result<Self, GeometryError> {
+        let faces: Vec<_> = self
+            .0
+            .faces
+            .iter()
+            .copied()
+            .filter(|face| keep(face.id))
+            .collect();
+        let used: BTreeSet<_> = faces.iter().flat_map(|face| face.vertices).collect();
+        let vertices_mm = self
+            .0
+            .vertices_mm
+            .iter()
+            .copied()
+            .filter(|vertex| used.contains(&vertex.id))
+            .collect();
+        Self::from_record(SurfaceRecord {
+            schema_version: self.0.schema_version,
+            id: self.0.id,
+            provenance: self.0.provenance.clone(),
+            vertices_mm,
+            faces,
+        })
     }
 
     pub fn into_record(self) -> SurfaceRecord {

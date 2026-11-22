@@ -1,17 +1,19 @@
 # FabricCraft architecture (proposal v0.1)
 
 ## Boundaries
-1. **Reference geometry import** accepts meshes exported by the user's CAD application and converts them to canonical triangular surfaces with stable provenance IDs, units and transforms. Future B-rep adapters may import CAD files directly into the same reference representation.
-2. **Fabric and material domain** owns the editable panels and their assembly. Imported reference surfaces are read-only inputs for fit, panel placement or collisions. The fabric domain tracks warp/weft directions, thickness, mass per area, stretch/shear/bending parameters, ease and attachments.
-3. **Panel optimization**: hard seam constraints, candidate segmentation, multi-objective scoring and deterministic diagnostics.
+1. **Reference geometry import** accepts meshes exported by the user's CAD application and converts them to canonical triangular surfaces with stable provenance IDs, units and transforms. Future B-rep adapters may import CAD files directly into the same read-only reference representation.
+2. **Fabric and material domain** owns the editable panel boundaries, seams, darts, allowances and assembly. Imported reference surfaces are read-only inputs for fit, panel placement or collisions. The fabric domain tracks warp/weft directions, thickness, mass per area, stretch/shear/bending parameters, ease and attachments.
+3. **Panel optimization** owns seam paths on the reference mesh, candidate segmentation, multi-objective scoring and deterministic diagnostics. Users set seams in FabricCraft. The CLI accepts source vertex paths, and a future GUI can select the same vertices and edges visually. Cuts create separate panel topology while retaining the source model.
 4. **Flattening**: conformal initialization, strain-aware nonlinear optimization, grain constraints, boundary matching, distortion reports. Reject invalid or self-intersecting output.
 5. **Pattern production**: sewing lines vs cut lines, allowances, darts, notches, registration, units, SVG/DXF.
 6. **Simulation API**: rest-shape mesh, topology, gravity, material laws, collision, friction, pinning, stitching, solver state and convergence reports. Interchangeable open-source backends.
 7. **Document/command API**: versioned schema, deterministic command execution, dependency tracking, undo, CLI, tests.
 8. **UI**: independent egui/wgpu interface; do not copy restricted SolidCraft brand/UI components.
-9. **Optional SolidCraft adapter** exchanges reference geometry. Pin an upstream revision, probe its APIs and licenses before reuse, and keep the core workspace independent.
+9. **Optional SolidCraft adapter** supplies reference geometry and source revision information to the fabric workflow. Pin an upstream revision, probe its APIs and licenses before reuse, and keep the core workspace independent.
 
 A future adjustable mannequin will use user-supplied body measurements to generate the same reference mesh representation. Keep the measurement definitions, units, and mannequin model version with that reference so the fabric workflow can reproduce it.
+
+Future source updates will bring a new CAD export or revision into FabricCraft. Store coverage and seams with their reference revision. Regenerate the affected patterns when the source faces and edges can be matched reliably. Ask the user to relink a selection when a change deletes a reference or produces several plausible matches. OBJ vertex numbers identify a particular export. Persistent CAD IDs will need a verified source interface.
 
 ## Accuracy rules
 - Define units and coordinate conventions at every boundary.

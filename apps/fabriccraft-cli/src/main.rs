@@ -2,7 +2,7 @@ mod panel;
 
 use std::{env, path::Path, process::ExitCode};
 
-const USAGE: &str = "Usage:\n  fabriccraft-cli surfaces <mesh.obj> <mm|cm|m|in>\n  fabriccraft-cli panel <mesh.obj> <mm|cm|m|in> <pattern.svg> [--surface NUMBER] [--fabric-mm WIDTH LENGTH]\n  fabriccraft-cli develop <precut.obj> <mm|cm|m|in> <pattern.svg> [--fabric-mm WIDTH LENGTH]";
+const USAGE: &str = "Usage:\n  fabriccraft-cli surfaces <mesh.obj> <mm|cm|m|in>\n  fabriccraft-cli seam-vertices <mesh.obj> <mm|cm|m|in> [--exclude-surfaces NUMBER,...]\n  fabriccraft-cli panel <mesh.obj> <mm|cm|m|in> <pattern.svg> [--surface NUMBER] [--fabric-mm WIDTH LENGTH]\n  fabriccraft-cli develop <mesh.obj> <mm|cm|m|in> <pattern.svg> [--exclude-surfaces NUMBER,...] [--open-tube | --seam VERTEX,VERTEX,...] [--fabric-mm WIDTH LENGTH]";
 
 fn main() -> ExitCode {
     let args: Vec<_> = env::args_os().skip(1).collect();
@@ -18,6 +18,9 @@ fn main() -> ExitCode {
         }
         [command, mesh, unit] if command == "surfaces" => {
             panel::list_surfaces(Path::new(mesh), unit.to_str())
+        }
+        [command, mesh, unit, options @ ..] if command == "seam-vertices" => {
+            panel::list_seam_vertices(Path::new(mesh), unit.to_str(), options)
         }
         [command, mesh, unit, svg, options @ ..] if command == "panel" => panel::export(
             Path::new(mesh),
