@@ -7,6 +7,7 @@ use std::{
 
 const MODEL: &str = include_str!("../../../examples/planar-panel-200x100.obj");
 const BOX: &str = include_str!("../../../examples/reference-box.obj");
+const CUT_CYLINDER: &str = include_str!("../../../examples/cut-cylinder.obj");
 
 struct Files {
     input: PathBuf,
@@ -201,5 +202,43 @@ fn numbers_patches_across_obj_groups_and_checks_the_selected_number() -> io::Res
         String::from_utf8_lossy(&result.stderr)
     );
     assert!(files.output.exists());
+    Ok(())
+}
+
+#[test]
+fn develops_a_pre_cut_mesh_and_checks_the_fabric_dimensions() -> io::Result<()> {
+    let files = Files::new()?;
+    let run = || {
+        Command::new(env!("CARGO_BIN_EXE_fabriccraft-cli"))
+            .arg("develop")
+            .arg(&files.input)
+            .arg("mm")
+            .arg(&files.output)
+            .args(["--fabric-mm", "130", "320"])
+            .output()
+    };
+
+    let uncut = CUT_CYLINDER
+        .replace("f 15 17 18", "f 15 1 2")
+        .replace("f 15 18 16", "f 15 2 16");
+    fs::write(&files.input, uncut)?;
+    let result = run()?;
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("development will not close"));
+    assert!(!files.output.exists());
+
+    fs::write(&files.input, CUT_CYLINDER)?;
+    let result = run()?;
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let summary = String::from_utf8_lossy(&result.stdout);
+    assert!(summary.contains("120.000 × 306.147 mm"));
+    assert!(summary.contains("Max edge error"));
+    assert!(summary.contains("fits as drawn"));
+    let svg = fs::read_to_string(&files.output)?;
+    assert!(svg.contains("Usable fabric 130 mm wide by 320 mm long"));
     Ok(())
 }

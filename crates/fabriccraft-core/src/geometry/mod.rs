@@ -18,7 +18,10 @@
 //! # Ok::<(), fabriccraft_core::geometry::GeometryError>(())
 //! ```
 
+mod adjacency;
 mod validation;
+
+pub(crate) use adjacency::face_neighbors;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SurfaceId(pub u64);

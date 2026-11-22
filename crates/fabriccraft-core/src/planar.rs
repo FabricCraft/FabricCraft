@@ -12,7 +12,7 @@ mod patches;
 pub use patches::{PlanarPatch, planar_patches};
 
 const PLANAR_TOLERANCE_MM: f64 = 0.001;
-const MAX_COORDINATE_MM: f64 = 1.0e9;
+pub(crate) const MAX_COORDINATE_MM: f64 = 1.0e9;
 const MAX_BOUNDARY_EDGES: usize = 4096;
 
 #[derive(Debug)]
@@ -199,20 +199,20 @@ fn between(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> bool {
     (0..2).all(|i| p[i] >= a[i].min(b[i]) && p[i] <= a[i].max(b[i]))
 }
 
-fn turn(a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> f64 {
+pub(crate) fn turn(a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> f64 {
     let [a, b, c] = [a, b, c].map(|[x, y]| Coord { x, y });
     orient2d(a, b, c)
 }
 
-fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+pub(crate) fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     std::array::from_fn(|i| a[i] - b[i])
 }
 
-fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+pub(crate) fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+pub(crate) fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -220,7 +220,7 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     ]
 }
 
-fn norm([x, y, z]: [f64; 3]) -> f64 {
+pub(crate) fn norm([x, y, z]: [f64; 3]) -> f64 {
     x.hypot(y).hypot(z)
 }
 

@@ -8,6 +8,7 @@ use std::{
 };
 
 use fabriccraft_core::{
+    develop::DevelopedPanel,
     geometry::{
         Face, FaceId, ImportFrame, LengthUnit, Provenance, Surface, SurfaceId, Vertex, VertexId,
     },
@@ -17,6 +18,11 @@ use fabriccraft_core::{
 const MAX_OBJ_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_TRIANGLES: usize = 100_000;
 const MARGIN_MM: f64 = 1.;
+
+pub enum Mode {
+    Planar,
+    Develop,
+}
 
 #[derive(Default)]
 struct Options {
@@ -83,13 +89,28 @@ pub fn export(
     unit: Option<&str>,
     output: &Path,
     arguments: &[OsString],
+    mode: Mode,
 ) -> Result<(), Box<dyn Error>> {
     let options = Options::parse(arguments)?;
     if !has_extension(output, "svg") {
         return Err("use an .svg output path".into());
     }
     let meshes = import_obj(input, parse_unit(unit)?)?;
-    let panel = if let Some(number) = options.surface {
+    let mut development_errors = None;
+    let panel = if matches!(mode, Mode::Develop) {
+        let [mesh] = meshes.as_slice() else {
+            return Err("develop expects one OBJ object or group with a prepared seam cut".into());
+        };
+        if options.surface.is_some() {
+            return Err("export the pre-cut patch as one OBJ mesh for develop".into());
+        }
+        let development = DevelopedPanel::from_surface(&mesh.surface)?;
+        development_errors = Some((
+            development.max_edge_error_mm(),
+            development.max_relative_area_error(),
+        ));
+        development.into_panel()
+    } else if let Some(number) = options.surface {
         let patches = model_patches(&meshes)?;
         let (_, patch) = patches.get(number - 1).ok_or_else(|| {
             format!(
@@ -126,6 +147,9 @@ pub fn export(
         };
     }
     let [width, height] = panel.size_mm();
+    if let Some((edge, area)) = development_errors {
+        println!("Max edge error {edge:.3e} mm. Max relative face-area error {area:.3e}.");
+    }
     if let Some(fabric) = fabric {
         println!("{}", fabric.description());
     }

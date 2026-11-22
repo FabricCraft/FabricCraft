@@ -1,6 +1,6 @@
 # FabricCraft
 
-**Status: pre-alpha. The CLI can select a flat surface from an OBJ and export a full-scale test outline.**
+**Status: pre-alpha. The CLI can export full-scale test outlines for flat surfaces and pre-cut developable mesh panels.**
 
 FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. Create and edit the reference model in your CAD application, then bring it into FabricCraft to design the fabric. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
 
@@ -49,6 +49,16 @@ Replace the model path and use the unit specified by your CAD exporter (`mm`, `c
 `--fabric-mm WIDTH LENGTH` is optional and always uses millimetres. Enter the **usable width across the fabric** first and the **available length along the roll** second. The check compares the outline's bounds against that rectangle as drawn and after a 90° turn. The box example fits the specified fabric only after a turn. The SVG records the result and keeps the outline's original orientation. Check the grain direction before turning a panel. This is a one-panel size check using zero seam allowance.
 
 The SVG uses millimetres with a 1 mm page margin around the outline. Print at 100% scale and compare it with a known CAD dimension.
+
+### Unwrap a pre-cut curved panel
+
+`develop` takes one triangulated OBJ patch with a prepared seam. The mesh must have one outer boundary. Where the cut separates two seam banks, give them distinct vertex indices even when they share the same 3D positions. The included eight-sided cylinder opens to approximately 120 × 306.147 mm. Its width around the cylinder is the sum of eight straight mesh edges.
+
+```sh
+cargo run --locked -p fabriccraft-cli -- develop examples/cut-cylinder.obj mm target/cylinder-panel.svg --fabric-mm 130 320
+```
+
+FabricCraft reports the largest edge and face-area errors and only exports a compatible, non-overlapping outline. If the mesh fails to close, check the cut and whether the shape can flatten without stretching. The optional fabric check uses the same millimetre width and length as the flat workflow.
 
 The prototype accepts up to 8 MiB, 100,000 triangles, and 4,096 boundary edges. Read the [geometry contract](docs/GEOMETRY_AND_FIXTURES.md) and [dependency review](docs/research/PLANAR_DEPENDENCIES.md) for algorithms and tolerances. The five bundled fabric profiles are illustrative metadata with empty measurement fields. [Material library specification](docs/materials/MATERIAL_LIBRARY.md)
 

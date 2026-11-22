@@ -1,5 +1,6 @@
 //! FabricCraft's headless geometry domain.
 
+pub mod develop;
 pub mod geometry;
 pub mod planar;
 

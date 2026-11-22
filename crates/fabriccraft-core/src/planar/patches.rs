@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::geometry::{FaceId, Surface, VertexId};
+use crate::geometry::{FaceId, Surface, face_neighbors};
 
 use super::{MAX_COORDINATE_MM, PLANAR_TOLERANCE_MM, PanelError, PlanarPanel, Plane, dot};
 
@@ -91,19 +91,7 @@ pub fn planar_patches(surface: &Surface) -> Result<Vec<PlanarPatch<'_>>, PanelEr
         .map(Plane::through)
         .collect::<Option<Vec<_>>>()
         .ok_or(PanelError::ProjectionPrecision)?;
-    let mut neighbors = vec![[None; 3]; triangles.len()];
-    let mut edges = BTreeMap::<(VertexId, VertexId), (usize, usize)>::new();
-    for (face, triangle) in record.faces.iter().enumerate() {
-        let [a, b, c] = triangle.vertices;
-        for (slot, edge) in [(a, b), (b, c), (c, a)].into_iter().enumerate() {
-            if let Some((other, other_slot)) = edges.remove(&(edge.1, edge.0)) {
-                neighbors[face][slot] = Some(other);
-                neighbors[other][other_slot] = Some(face);
-            } else {
-                edges.insert(edge, (face, slot));
-            }
-        }
-    }
+    let neighbors = face_neighbors(&record.faces);
 
     let mut patches = Vec::new();
     let mut assigned = vec![false; triangles.len()];
@@ -124,7 +112,7 @@ pub fn planar_patches(surface: &Surface) -> Result<Vec<PlanarPatch<'_>>, PanelEr
                     high[axis] = high[axis].max(point[axis]);
                 }
             }
-            for other in neighbors[face].into_iter().flatten() {
+            for (other, _) in neighbors[face].into_iter().flatten() {
                 if !assigned[other]
                     && dot(plane.normal, planes[other].normal) > 0.
                     && triangles[other]
