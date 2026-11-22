@@ -4,7 +4,7 @@ No research candidate is an approved dependency until its current repository, re
 
 ## Candidates to evaluate
 
-- SolidCraft / SolidCore: geometry and document integration, with code-versus-brand licensing boundaries checked against the exact upstream revision.
+- SolidCraft / SolidCore: optional import of existing CAD reference models, with code and brand licensing boundaries checked against the exact upstream revision.
 - geometry-central: surface differential geometry and intrinsic mesh processing; inspect Rust FFI costs.
 - libigl: mesh parameterization and deformation; evaluate individual components and optional dependency licenses separately.
 - Open-source optimization libraries: constrained nonlinear solvers, sparse linear algebra, automatic differentiation, and robust predicates.

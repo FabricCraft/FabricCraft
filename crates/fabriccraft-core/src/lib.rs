@@ -1,4 +1,6 @@
-//! FabricCraft core: pre-alpha. Domain types and solvers will be introduced in reviewed milestones.
+//! FabricCraft's headless geometry domain.
+
+pub mod geometry;
 
 /// Returns the current prototype schema version.
 pub fn schema_version() -> u32 {

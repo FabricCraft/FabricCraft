@@ -2,7 +2,7 @@
 
 **Status: pre-alpha / architecture and research. No working pattern-generation engine yet.**
 
-FabricCraft is a community-driven, fully open-source system for generating manufacturable 2D fabric patterns from 3D geometry. It targets upholstery, fitted covers, garments and other textile applications. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
+FabricCraft is a community-driven, open-source project for designing fabric panels and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. For fitted work, an existing 3D model supplies the reference shape. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
 
 ## Principles
 - Accuracy and validated manufacturing output over speed.
@@ -27,7 +27,7 @@ cargo test --locked --workspace
 cargo run --locked -p fabriccraft-cli
 ```
 
-The CLI prints the prototype schema version. The proposed mesh contract and its first geometric checks are in the [geometry and fixture design](docs/GEOMETRY_AND_FIXTURES.md). The five bundled fabric profiles are illustrative metadata. Their measurement fields are empty. See the [material library specification](docs/materials/MATERIAL_LIBRARY.md).
+The CLI prints the prototype schema version. The core library can receive a triangle mesh in memory, convert its coordinates to millimetres, and identify invalid faces and connections. See the [geometry contract and benchmark designs](docs/GEOMETRY_AND_FIXTURES.md). The five bundled fabric profiles are illustrative metadata. Their measurement fields are empty. See the [material library specification](docs/materials/MATERIAL_LIBRARY.md).
 
 For verification results and outstanding checks, read the [initial foundation review](docs/FOUNDATION_REVIEW.md).
 

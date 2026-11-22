@@ -1,6 +1,6 @@
 # Canonical geometry and initial benchmarks
 
-**M0 design proposal.** The first interchange object represents a triangulated target surface. Importers produce it and flattening experiments consume it. A cover can identify a subset of its faces, so the underlying object's identity survives panel selection.
+**M0 design proposal.** The first interchange object represents an existing target surface supplied as a triangle mesh. Importers produce it and fabric panel tools consume it as a reference. A cover can identify a subset of its faces while keeping the source object's identity.
 
 ## Geometry contract
 
@@ -12,6 +12,12 @@
 | Panel and seam | A panel references source faces. Its 2D vertices carry panel-local IDs, positions in millimetres and source vertex IDs, so both banks of a cut can retain provenance. A seam pairs ordered boundary chains with an explicit endpoint correspondence. Derive adjacency from face edges. |
 
 Validate units, finite coordinates, unique IDs, references, distinct triangle corners, face area and winding. Allow open boundaries. Reject nonmanifold edges and disconnected face fans at a vertex. Return a diagnostic code with the offending entity or input field. Document scale-aware degeneracy tolerances and include their units in benchmark reports.
+
+## First implementation
+
+The core accepts a list of 3D points and triangles in memory. Each triangle names its three points by ID, so reordering the input keeps the same connections. Callers supply the source identity, length unit, axis convention and translation. The library accepts millimetres, centimetres, metres and inches. It converts positions to millimetres and reverses triangle winding when the coordinate change reverses handedness.
+
+`Surface::import` performs that conversion once. `Surface::from_record` checks a saved canonical record directly, which keeps a second import from rescaling its coordinates. Both entry points validate geometry and topology. The implemented frame supports signed axis permutations and translation. General rotations, file-format adapters, per-entity source references and panel/seam records are future work. The [core API](../crates/fabriccraft-core/src/geometry/mod.rs) includes an executable example.
 
 ## First headless fixtures
 

@@ -42,7 +42,7 @@ Evaluate pinned versions of Rapier Cloth, libuipc and other candidates: gravity,
 
 ## 11. [M0] Build minimal SolidCraft adapter spike
 Labels: integration, M0
-Compile against pinned upstream APIs without copying restricted UI assets. Acceptance: one verified mesh exchange operation, documented limitations and CI strategy.
+Compile against pinned upstream APIs for optional import of an existing CAD reference. Acceptance: one verified mesh exchange operation, documented limitations and CI strategy.
 
 ## 12. [Community] Add first physical fabric validation protocol
 Labels: documentation, testing, good first issue

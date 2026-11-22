@@ -2,12 +2,12 @@
 
 ## Mission
 
-Create a free and open-source, community-developed, Rust-first application that derives usable 2D fabric cutting and sewing patterns from 3D geometry. It should serve upholstery, furniture covers, soft goods, garments, and other fabric-on-geometry applications.
+Create a free and open-source, community-developed, Rust-first application for designing fabric panels and generating usable 2D cutting and sewing patterns. It should serve upholstery, furniture covers, soft goods, garments, and other fabric-on-geometry applications. When the fabric needs to fit a 3D shape, the user supplies an existing model as a reference.
 
 ## Intended user experience
 
-1. Import or construct a 3D target (mesh initially; B-rep via future adapters).
-2. Identify surfaces to cover and the desired fit (loose drape, close fit, tensioned covering).
+1. Start with a fabric panel or import an existing 3D reference mesh for fitted work. Optional future adapters may import existing CAD models.
+2. Select any reference surfaces to cover and choose the desired fit (loose drape, close fit, tensioned covering).
 3. Optionally specify seams, darts, pleats, grain direction, attachments, fasteners, material, and construction constraints.
 4. Generate candidate panel layouts and optimize them against geometric distortion and manufacturing constraints.
 5. Flatten panels into dimensionally specified 2D sewing and cutting patterns with seam allowances, registration marks, labels, and exports.
@@ -33,5 +33,6 @@ A 3D surface cannot generally be flattened without distortion. Accurate fabric p
 - Production-ready clothing sizes or grading.
 - Automatic perfect fits for arbitrary surfaces.
 - Photorealistic rendering.
+- Creating or editing the underlying 3D reference object. Fabric authoring covers panels, patterns, and their assembly.
 - A full sewing CAD workbench in the first milestone.
 - Direct integration into SolidCraft's native feature timeline before upstream interfaces are verified.
