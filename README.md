@@ -1,6 +1,6 @@
 # FabricCraft
 
-**Status: pre-alpha. The CLI exports full-scale outlines for flat and developable panels and can open an imported tube along a seam.**
+**Status: pre-alpha. The desktop app can propose and preview a fabric skin across an imported frame. The CLI exports full-scale outlines for flat and developable panels.**
 
 FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. CAD supplies the read-only reference shape. FabricCraft owns the coverage, seams and fabric panel geometry. The long-term vision combines automatic panel segmentation, material-aware flattening, and gravity-driven cloth draping.
 
@@ -26,6 +26,18 @@ cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo test --locked --workspace
 cargo run --locked -p fabriccraft-cli
 ```
+
+### Open the desktop app
+
+On Windows, open `target\release\fabriccraft-gui.exe` after building it with the command below. The app opens a built-in furniture frame and suggests four corners spanning the open middle and the recessed brace.
+
+```sh
+cargo build --locked --release -p fabriccraft-cli --features gui --bin fabriccraft-gui
+```
+
+Drop in a triangulated OBJ or paste its path and choose the source unit. Choose the side to cover and click **Suggest corners**. The suggestion uses the convex footprint seen from that direction. For a concave boundary or different support points, switch between **Pick vertex** and **Pick edge** and edit the ordered boundary. You can span between separate mesh objects. Drag to orbit and scroll to zoom.
+
+The teal surface is a geometric estimate spanning the selected boundary at the anchors' actual 3D positions. Sag, stretching, and collisions are future work. When the surface passes the existing development checks, **Export full-scale SVG** writes the outline with zero seam allowance. You can check the outline against usable fabric width and length in millimetres.
 
 ### Try a full-scale test panel
 

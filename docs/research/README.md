@@ -6,3 +6,4 @@ Create one Markdown record per upstream candidate, naming repository URL, pinned
 - [Flattening library comparison and mathematical checks](FLATTENING_CANDIDATES.md)
 - [Source and commands for the standalone probes](probes/README.md)
 - [OBJ parsing and planar geometry dependencies](PLANAR_DEPENDENCIES.md)
+- [Desktop and fabric-skin dependencies](STUDIO_DEPENDENCIES.md)

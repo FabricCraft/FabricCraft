@@ -6,6 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+earcut = "=0.4.11"
 robust = "=1.2.0"
 
 [lints]

@@ -13,7 +13,7 @@ pub use patches::{PlanarPatch, planar_patches};
 
 const PLANAR_TOLERANCE_MM: f64 = 0.001;
 pub(crate) const MAX_COORDINATE_MM: f64 = 1.0e9;
-const MAX_BOUNDARY_EDGES: usize = 4096;
+pub(crate) const MAX_BOUNDARY_EDGES: usize = 4096;
 
 #[derive(Debug)]
 pub struct PlanarPanel {
@@ -168,7 +168,7 @@ fn boundary_loop(edges: BTreeMap<(VertexId, VertexId), ()>) -> Result<Vec<Vertex
     Err(PanelError::SingleBoundaryRequired)
 }
 
-fn validate_outline(points: &[[f64; 2]]) -> Result<(), PanelError> {
+pub(crate) fn validate_outline(points: &[[f64; 2]]) -> Result<(), PanelError> {
     for i in 0..points.len() {
         let j = (i + 1) % points.len();
         let a = points[i];

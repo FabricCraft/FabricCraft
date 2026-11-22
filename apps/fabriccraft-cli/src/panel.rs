@@ -278,18 +278,7 @@ pub fn export(
         .map(|stock| FabricFit::check(panel.size_mm(), stock))
         .transpose()?;
     let svg = render(panel, fabric, seam.zip(seam_summary.as_deref()))?;
-    let mut file = File::create_new(output)
-        .map_err(|err| format!("could not create {}: {err}", output.display()))?;
-    if let Err(error) = file.write_all(svg.as_bytes()) {
-        drop(file);
-        let message = format!("could not finish writing {}: {error}", output.display());
-        return match fs::remove_file(output) {
-            Ok(()) => Err(message.into()),
-            Err(cleanup) => {
-                Err(format!("{message}. Could not remove the partial file ({cleanup})").into())
-            }
-        };
-    }
+    write_svg(output, &svg)?;
     let [width, height] = panel.size_mm();
     if let Some(development) = development {
         let edge = development.max_edge_error_mm();
@@ -309,6 +298,22 @@ pub fn export(
     Ok(())
 }
 
+fn write_svg(output: &Path, svg: &str) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create_new(output)
+        .map_err(|err| format!("could not create {}: {err}", output.display()))?;
+    if let Err(error) = file.write_all(svg.as_bytes()) {
+        drop(file);
+        let message = format!("could not finish writing {}: {error}", output.display());
+        return match fs::remove_file(output) {
+            Ok(()) => Err(message.into()),
+            Err(cleanup) => {
+                Err(format!("{message}. Could not remove the partial file ({cleanup})").into())
+            }
+        };
+    }
+    Ok(())
+}
+
 fn parse_unit(unit: Option<&str>) -> Result<LengthUnit, &'static str> {
     match unit {
         Some("mm") => Ok(LengthUnit::Millimetre),
@@ -325,9 +330,9 @@ fn has_extension(path: &Path, expected: &str) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case(expected))
 }
 
-struct ObjMesh {
-    name: String,
-    surface: Surface,
+pub struct ObjMesh {
+    pub name: String,
+    pub surface: Surface,
 }
 
 fn model_patches(meshes: &[ObjMesh]) -> Result<Vec<(&str, PlanarPatch<'_>)>, Box<dyn Error>> {
@@ -340,7 +345,7 @@ fn model_patches(meshes: &[ObjMesh]) -> Result<Vec<(&str, PlanarPatch<'_>)>, Box
     Ok(result)
 }
 
-fn import_obj(path: &Path, unit: LengthUnit) -> Result<Vec<ObjMesh>, Box<dyn Error>> {
+pub fn import_obj(path: &Path, unit: LengthUnit) -> Result<Vec<ObjMesh>, Box<dyn Error>> {
     if !has_extension(path, "obj") {
         return Err("use a triangulated .obj input path".into());
     }
@@ -348,6 +353,14 @@ fn import_obj(path: &Path, unit: LengthUnit) -> Result<Vec<ObjMesh>, Box<dyn Err
         File::open(path).map_err(|err| format!("could not open {}: {err}", path.display()))?;
     let mut content = String::new();
     file.take(MAX_OBJ_BYTES + 1).read_to_string(&mut content)?;
+    parse_obj(&content, path, unit)
+}
+
+pub fn parse_obj(
+    content: &str,
+    path: &Path,
+    unit: LengthUnit,
+) -> Result<Vec<ObjMesh>, Box<dyn Error>> {
     if content.len() as u64 > MAX_OBJ_BYTES {
         return Err("OBJ exceeds the 8 MiB input limit".into());
     }
@@ -541,6 +554,26 @@ fn render(
     }
     svg.push_str("\n</svg>\n");
     Ok(svg)
+}
+
+/// Export the same dimensioned outline and optional fabric-size check as the CLI.
+pub fn save_panel_svg(
+    panel: &PlanarPanel,
+    output: &Path,
+    stock: Option<[f64; 2]>,
+) -> Result<String, Box<dyn Error>> {
+    if !has_extension(output, "svg") {
+        return Err("Use an .svg output path.".into());
+    }
+    if stock.is_some_and(|sizes| sizes.iter().any(|d| !d.is_finite() || *d <= 0.)) {
+        return Err("Enter positive fabric width and length.".into());
+    }
+    let fabric = stock
+        .map(|stock| FabricFit::check(panel.size_mm(), stock))
+        .transpose()?;
+    let svg = render(panel, fabric, None)?;
+    write_svg(output, &svg)?;
+    Ok(fabric.map(FabricFit::description).unwrap_or_default())
 }
 
 fn write_points(svg: &mut String, points: &[[f64; 2]]) -> Result<(), std::fmt::Error> {

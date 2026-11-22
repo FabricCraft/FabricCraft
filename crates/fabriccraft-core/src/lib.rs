@@ -3,6 +3,7 @@
 pub mod develop;
 pub mod geometry;
 pub mod planar;
+pub mod skin;
 pub mod tube;
 
 /// Returns the current prototype schema version.

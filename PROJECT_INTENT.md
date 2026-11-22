@@ -9,7 +9,7 @@ A later garment workflow can use an adjustable human mannequin as the reference.
 ## Intended user experience
 
 1. Export an existing 3D model from the CAD application and import it into FabricCraft as a reference mesh. Future adapters may accept CAD files directly.
-2. Select the reference surfaces to cover and choose the desired fit (loose drape, close fit, tensioned covering).
+2. Select faces that the cloth should follow, or choose support vertices and edges that define a separate fabric surface. A fabric skin can span openings and recessed members, such as the bays of a furniture frame. Choose the desired fit (loose drape, close fit, tensioned covering).
 3. Optionally specify seams, darts, pleats, grain direction, attachments, fasteners, material, usable fabric width and length, and construction constraints. Choose coverage and edit seams in FabricCraft against the read-only reference mesh.
 4. Generate candidate panel layouts and optimize them against geometric distortion and manufacturing constraints.
 5. Flatten panels into dimensionally specified 2D sewing and cutting patterns with seam allowances, registration marks, labels, and exports.

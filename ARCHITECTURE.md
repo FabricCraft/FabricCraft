@@ -2,13 +2,13 @@
 
 ## Boundaries
 1. **Reference geometry import** accepts meshes exported by the user's CAD application and converts them to canonical triangular surfaces with stable provenance IDs, units and transforms. Future B-rep adapters may import CAD files directly into the same read-only reference representation.
-2. **Fabric and material domain** owns the editable panel boundaries, seams, darts, allowances and assembly. Imported reference surfaces are read-only inputs for fit, panel placement or collisions. The fabric domain tracks warp/weft directions, thickness, mass per area, stretch/shear/bending parameters, ease and attachments.
+2. **Fabric and material domain** owns the editable coverage surface, panel boundaries, seams, darts, allowances and assembly. A fabric surface can follow a reference face or interpolate across support vertices and edges. Imported reference surfaces are read-only inputs for fit, panel placement or collisions. The fabric domain tracks warp/weft directions, thickness, mass per area, stretch/shear/bending parameters, ease and attachments.
 3. **Panel optimization** owns seam paths on the reference mesh, candidate segmentation, multi-objective scoring and deterministic diagnostics. Users set seams in FabricCraft. The CLI accepts source vertex paths, and a future GUI can select the same vertices and edges visually. Cuts create separate panel topology while retaining the source model.
 4. **Flattening**: conformal initialization, strain-aware nonlinear optimization, grain constraints, boundary matching, distortion reports. Reject invalid or self-intersecting output.
 5. **Pattern production**: sewing lines vs cut lines, allowances, darts, notches, registration, units, SVG/DXF.
 6. **Simulation API**: rest-shape mesh, topology, gravity, material laws, collision, friction, pinning, stitching, solver state and convergence reports. Interchangeable open-source backends.
 7. **Document/command API**: versioned schema, deterministic command execution, dependency tracking, undo, CLI, tests.
-8. **UI**: independent egui/wgpu interface; do not copy restricted SolidCraft brand/UI components.
+8. **UI** is independent. The first eframe/egui desktop app uses the OpenGL backend to import an OBJ, inspect its geometry, suggest a fabric boundary, pick support vertices or edges, and export a pattern. The GUI and CLI share reference import and geometric development.
 9. **Optional SolidCraft adapter** supplies reference geometry and source revision information to the fabric workflow. Pin an upstream revision, probe its APIs and licenses before reuse, and keep the core workspace independent.
 
 A future adjustable mannequin will use user-supplied body measurements to generate the same reference mesh representation. Keep the measurement definitions, units, and mannequin model version with that reference so the fabric workflow can reproduce it.
