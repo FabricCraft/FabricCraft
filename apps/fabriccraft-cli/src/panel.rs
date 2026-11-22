@@ -14,7 +14,7 @@ use fabriccraft_core::{
     geometry::{
         Face, FaceId, ImportFrame, LengthUnit, Provenance, Surface, SurfaceId, Vertex, VertexId,
     },
-    planar::{PlanarPanel, PlanarPatch, planar_patches},
+    planar::{CutPattern, PlanarPanel, PlanarPatch, planar_patches},
     tube::TubeDevelopment,
 };
 
@@ -277,7 +277,12 @@ pub fn export(
         .fabric
         .map(|stock| FabricFit::check(panel.size_mm(), stock))
         .transpose()?;
-    let svg = render(panel, fabric, seam.zip(seam_summary.as_deref()))?;
+    let markings = seam
+        .zip(seam_summary.as_deref())
+        .map_or(Markings::None, |(tube, summary)| {
+            Markings::Tube(tube, summary)
+        });
+    let svg = render(panel.outline_mm(), panel.size_mm(), fabric, markings)?;
     write_svg(output, &svg)?;
     let [width, height] = panel.size_mm();
     if let Some(development) = development {
@@ -513,42 +518,64 @@ fn describe_seam(seam: &TubeDevelopment) -> String {
     )
 }
 
+enum Markings<'a> {
+    None,
+    Tube(&'a TubeDevelopment, &'a str),
+    Allowance(&'a CutPattern),
+}
+
 fn render(
-    panel: &PlanarPanel,
+    outline: &[[f64; 2]],
+    size: [f64; 2],
     fabric: Option<FabricFit>,
-    seam: Option<(&TubeDevelopment, &str)>,
+    markings: Markings<'_>,
 ) -> Result<String, std::fmt::Error> {
-    let [width, height] = panel.size_mm().map(|size| size + 2. * MARGIN_MM);
+    let [width, height] = size.map(|size| size + 2. * MARGIN_MM);
     let mut svg = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}mm" height="{height}mm" viewBox="-{MARGIN_MM} -{MARGIN_MM} {width} {height}">"#
     );
-    if fabric.is_some() || seam.is_some() {
+    if fabric.is_some() || !matches!(markings, Markings::None) {
         svg.push_str("\n  <desc>");
         if let Some(fabric) = fabric {
             write!(svg, "{}", fabric.description())?;
         }
-        if let Some((_, summary)) = seam {
-            if fabric.is_some() {
-                svg.push(' ');
+        if fabric.is_some() && !matches!(markings, Markings::None) {
+            svg.push(' ');
+        }
+        match markings {
+            Markings::None => {}
+            Markings::Tube(_, summary) => svg.push_str(summary),
+            Markings::Allowance(pattern) => {
+                write!(svg, "Seam allowance {} mm.", pattern.allowance_mm())?;
             }
-            svg.push_str(summary);
         }
         svg.push_str("</desc>");
     }
-    let panel_height = panel.size_mm()[1];
+    let panel_height = size[1];
     write!(
         svg,
         "\n  <polygon fill=\"none\" stroke=\"black\" stroke-width=\"0.2\" transform=\"translate(0 {panel_height}) scale(1 -1)\" points=\""
     )?;
-    write_points(&mut svg, panel.outline_mm())?;
+    write_points(&mut svg, outline)?;
     svg.push_str("\"/>");
-    if let Some((seam, _)) = seam {
-        for (name, points) in ["seam-a", "seam-b"].into_iter().zip(seam.banks_mm()) {
+    match markings {
+        Markings::None => {}
+        Markings::Tube(seam, _) => {
+            for (name, points) in ["seam-a", "seam-b"].into_iter().zip(seam.banks_mm()) {
+                write!(
+                    svg,
+                    "\n  <polyline id=\"{name}\" fill=\"none\" stroke=\"#087e8b\" stroke-width=\"0.35\" stroke-dasharray=\"2 1\" transform=\"translate(0 {panel_height}) scale(1 -1)\" points=\""
+                )?;
+                write_points(&mut svg, points)?;
+                svg.push_str("\"/>");
+            }
+        }
+        Markings::Allowance(pattern) => {
             write!(
                 svg,
-                "\n  <polyline id=\"{name}\" fill=\"none\" stroke=\"#087e8b\" stroke-width=\"0.35\" stroke-dasharray=\"2 1\" transform=\"translate(0 {panel_height}) scale(1 -1)\" points=\""
+                "\n  <polygon id=\"sewing-line\" fill=\"none\" stroke=\"#087e8b\" stroke-width=\"0.25\" stroke-dasharray=\"2 1\" transform=\"translate(0 {panel_height}) scale(1 -1)\" points=\""
             )?;
-            write_points(&mut svg, points)?;
+            write_points(&mut svg, pattern.sewing_line_mm())?;
             svg.push_str("\"/>");
         }
     }
@@ -562,6 +589,42 @@ pub fn save_panel_svg(
     output: &Path,
     stock: Option<[f64; 2]>,
 ) -> Result<String, Box<dyn Error>> {
+    save_outline_svg(
+        panel.outline_mm(),
+        panel.size_mm(),
+        Markings::None,
+        output,
+        stock,
+    )
+}
+
+/// Export the cut line at full scale and mark the corresponding sewing line.
+pub fn save_cut_pattern_svg(
+    pattern: &CutPattern,
+    output: &Path,
+    stock: Option<[f64; 2]>,
+) -> Result<String, Box<dyn Error>> {
+    let markings = if pattern.allowance_mm() > 0. {
+        Markings::Allowance(pattern)
+    } else {
+        Markings::None
+    };
+    save_outline_svg(
+        pattern.cut_line_mm(),
+        pattern.size_mm(),
+        markings,
+        output,
+        stock,
+    )
+}
+
+fn save_outline_svg(
+    outline: &[[f64; 2]],
+    size: [f64; 2],
+    markings: Markings<'_>,
+    output: &Path,
+    stock: Option<[f64; 2]>,
+) -> Result<String, Box<dyn Error>> {
     if !has_extension(output, "svg") {
         return Err("Use an .svg output path.".into());
     }
@@ -569,9 +632,9 @@ pub fn save_panel_svg(
         return Err("Enter positive fabric width and length.".into());
     }
     let fabric = stock
-        .map(|stock| FabricFit::check(panel.size_mm(), stock))
+        .map(|stock| FabricFit::check(size, stock))
         .transpose()?;
-    let svg = render(panel, fabric, None)?;
+    let svg = render(outline, size, fabric, markings)?;
     write_svg(output, &svg)?;
     Ok(fabric.map(FabricFit::description).unwrap_or_default())
 }

@@ -11,22 +11,33 @@ use crate::{
     planar::{MAX_BOUNDARY_EDGES, MAX_COORDINATE_MM, cross, sub, turn, validate_outline},
 };
 
-/// Suggest corner indices from the convex footprint seen along the given axis.
-/// For coincident projected positions, prefer the most outward 3D point.
-pub fn suggest_boundary(points: &[[f64; 3]], side: Axis) -> Result<Vec<usize>, SkinError> {
-    check_coordinates(points)?;
-    let (depth, positive) = match side {
+mod boundary;
+pub use boundary::Boundary;
+
+fn side_axis(side: Axis) -> (usize, bool) {
+    match side {
         Axis::X => (0, true),
         Axis::Y => (1, true),
         Axis::Z => (2, true),
         Axis::NegativeX => (0, false),
         Axis::NegativeY => (1, false),
         Axis::NegativeZ => (2, false),
-    };
-    let project = |p: [f64; 3]| {
-        [p[(depth + 1) % 3], p[(depth + 2) % 3]].map(|value| if value == 0. { 0. } else { value })
-    };
-    let projected: Vec<_> = points.iter().copied().map(project).collect();
+    }
+}
+
+fn project(p: [f64; 3], axis: usize) -> [f64; 2] {
+    [p[(axis + 1) % 3], p[(axis + 2) % 3]]
+}
+
+/// Suggest corner indices from the convex footprint seen along the given axis.
+/// For coincident projected positions, prefer the most outward 3D point.
+pub fn suggest_boundary(points: &[[f64; 3]], side: Axis) -> Result<Vec<usize>, SkinError> {
+    check_coordinates(points)?;
+    let (depth, positive) = side_axis(side);
+    let projected: Vec<_> = points
+        .iter()
+        .map(|&p| project(p, depth).map(|value| if value == 0. { 0. } else { value }))
+        .collect();
     let mut order: Vec<_> = (0..points.len()).collect();
     let height = |i: usize| {
         if positive {
@@ -77,6 +88,10 @@ pub fn suggest_boundary(points: &[[f64; 3]], side: Axis) -> Result<Vec<usize>, S
 /// Triangulate a simple projected perimeter and lift its triangles back to the
 /// selected 3D points. Faces can span open space between supports.
 pub fn build_skin(anchors: &[[f64; 3]]) -> Result<Surface, SkinError> {
+    triangulate_skin(anchors, None)
+}
+
+fn triangulate_skin(anchors: &[[f64; 3]], projection: Option<usize>) -> Result<Surface, SkinError> {
     if anchors.len() < 3 {
         return Err(SkinError::TooFewAnchors);
     }
@@ -95,20 +110,17 @@ pub fn build_skin(anchors: &[[f64; 3]]) -> Result<Surface, SkinError> {
         }
     }
     let [x, y, z] = normal.map(f64::abs);
-    let axis = if x >= y && x >= z {
+    let axis = projection.unwrap_or(if x >= y && x >= z {
         0
     } else if y >= z {
         1
     } else {
         2
-    };
+    });
     if normal[axis] == 0. {
         return Err(SkinError::Projection);
     }
-    let projected: Vec<_> = offsets
-        .iter()
-        .map(|p| [p[(axis + 1) % 3], p[(axis + 2) % 3]])
-        .collect();
+    let projected: Vec<_> = offsets.iter().map(|&p| project(p, axis)).collect();
     validate_outline(&projected).map_err(|_| SkinError::Projection)?;
 
     let mut indices: Vec<usize> = Vec::new();
@@ -199,6 +211,7 @@ pub enum SkinError {
     TooManyAnchors,
     CoordinateRange,
     Projection,
+    BoundaryEdit,
     Triangulation,
     Geometry(GeometryError),
 }
@@ -221,6 +234,10 @@ impl fmt::Display for SkinError {
             Self::Projection => write!(
                 f,
                 "Choose a boundary that projects to a single outline without repeated or crossing points."
+            ),
+            Self::BoundaryEdit => write!(
+                f,
+                "This pick would cross the outline, overlap a point in the coverage view, or break a selected edge. Try another support or release an edge."
             ),
             Self::Triangulation => write!(
                 f,

@@ -7,8 +7,10 @@ use robust::{Coord, orient2d};
 
 use crate::geometry::{FaceId, GeometryError, Surface, VertexId};
 
+mod allowance;
 mod patches;
 
+pub use allowance::{AllowanceError, CutPattern};
 pub use patches::{PlanarPatch, planar_patches};
 
 const PLANAR_TOLERANCE_MM: f64 = 0.001;
@@ -174,7 +176,7 @@ pub(crate) fn validate_outline(points: &[[f64; 2]]) -> Result<(), PanelError> {
         let a = points[i];
         let b = points[j];
         let c = points[(j + 1) % points.len()];
-        if a == b || (turn(a, b, c) == 0. && (between(a, b, c) || between(c, a, b))) {
+        if a == b || overlaps_at_join(a, b, c) {
             return Err(PanelError::IntersectingOutline);
         }
         for k in (i + 2)..points.len() {
@@ -187,7 +189,11 @@ pub(crate) fn validate_outline(points: &[[f64; 2]]) -> Result<(), PanelError> {
     Ok(())
 }
 
-fn intersects(a: [f64; 2], b: [f64; 2], c: [f64; 2], d: [f64; 2]) -> bool {
+pub(crate) fn overlaps_at_join(a: [f64; 2], b: [f64; 2], c: [f64; 2]) -> bool {
+    turn(a, b, c) == 0. && (between(a, b, c) || between(c, a, b))
+}
+
+pub(crate) fn intersects(a: [f64; 2], b: [f64; 2], c: [f64; 2], d: [f64; 2]) -> bool {
     // A bounding box check avoids unnecessary robust predicates on distant edges.
     if (0..2).any(|i| a[i].max(b[i]) < c[i].min(d[i]) || c[i].max(d[i]) < a[i].min(b[i])) {
         return false;

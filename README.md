@@ -35,9 +35,11 @@ On Windows, open `target\release\fabriccraft-gui.exe` after building it with the
 cargo build --locked --release -p fabriccraft-cli --features gui --bin fabriccraft-gui
 ```
 
-Drop in a triangulated OBJ or paste its path and choose the source unit. Choose the side to cover and click **Suggest corners**. The suggestion uses the convex footprint seen from that direction. For a concave boundary or different support points, switch between **Pick vertex** and **Pick edge** and edit the ordered boundary. You can span between separate mesh objects. Drag to orbit and scroll to zoom.
+Drop in a triangulated OBJ or paste its path and choose the source unit. The viewport uses the imported triangles directly and shows the reference's open edges and creases, with coplanar diagonals hidden. Choose the side to cover and click **Suggest corners** to start from the convex footprint. Use **Pick vertex** or **Pick edge** to refine the boundary in any order. The app inserts supports where they add the least perimeter among valid placements in the coverage view. A picked edge stays together on the outline until you release it or remove one of its endpoints. You can span between separate mesh objects. Drag to orbit, scroll to zoom, or click **Coverage view** to look straight at the boundary.
 
-The teal surface is a geometric estimate spanning the selected boundary at the anchors' actual 3D positions. Sag, stretching, and collisions are future work. When the surface passes the existing development checks, **Export full-scale SVG** writes the outline with zero seam allowance. You can check the outline against usable fabric width and length in millimetres.
+The teal surface is a geometric estimate spanning the selected boundary at the supports' actual 3D positions. Sag, stretching, and collisions are future work. Open **Pattern** or **Side by side** to see the flattened piece update as you change its supports. Enter a uniform seam allowance in **mm**, **cm**, **m**, **in**, **ft**, or **yd**. Decimal measurements and fractions such as `1/2` and `1 1/4` work. The allowance, fabric width, fabric length, and OBJ units are independent.
+
+**Export full-scale SVG** writes the cut line and, for a positive allowance, the dashed sewing line. The usable fabric size check uses the cut line. The current workflow edits one piece at a time and supports a single outline. If the allowance closes a gap or overlaps the outline, the app asks for a smaller allowance or an adjusted boundary.
 
 ### Try a full-scale test panel
 

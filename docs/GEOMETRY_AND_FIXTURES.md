@@ -25,6 +25,12 @@ The `develop` command builds a planar development by placing each triangle on th
 
 For an uncapped tube, FabricCraft checks that the validated surface is connected, has two boundary loops and has Euler characteristic zero. The explicit seam is a simple path of mesh edges that meets each rim once. The automatic option uses Dijkstra's algorithm with 3D edge lengths as its costs. FabricCraft splits the mesh corners across the chosen path and preserves source face IDs. It then develops the cut mesh, compares corresponding edges on the two seam sides, and exports them with the outline. The eight-sided [uncut cylinder](../examples/uncut-cylinder.obj) is a fixture for this workflow. [Dijkstra's original paper](https://doi.org/10.1007/BF01386390)
 
+## Fabric boundary and cut line
+
+Desktop boundary edits use the selected coverage plane for ordering and intersection checks. Added supports go into an unlocked perimeter gap, ranked by added length in that plane. Orientation predicates reject crossings, overlaps and coincident projected supports. An explicit reference edge constrains both endpoints to remain adjacent. The triangulated fabric skin retains the supports' original 3D positions.
+
+A positive seam allowance offsets each sewing edge outward by the same distance in the flattened plane. Adjacent offset lines meet at a miter. The prototype rejects crossings, contact between cut and sewing lines, and collapsed or reversed edges. Topology-changing offsets need a more complete polygon offset algorithm. [CGAL polygon offsetting manual](https://doc.cgal.org/latest/Straight_skeleton_2/index.html)
+
 For a complete [capped cylinder](../examples/capped-cylinder.obj), excluding the two cap patches inside FabricCraft produces the same lateral coverage. Selecting faces preserves source vertex and face IDs, and the seam can use the original imported vertex numbers. The filtered surface and cut are used for the pattern, with the original file retained as the reference.
 
 ## First headless fixtures

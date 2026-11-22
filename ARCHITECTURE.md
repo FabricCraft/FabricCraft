@@ -8,7 +8,7 @@
 5. **Pattern production**: sewing lines vs cut lines, allowances, darts, notches, registration, units, SVG/DXF.
 6. **Simulation API**: rest-shape mesh, topology, gravity, material laws, collision, friction, pinning, stitching, solver state and convergence reports. Interchangeable open-source backends.
 7. **Document/command API**: versioned schema, deterministic command execution, dependency tracking, undo, CLI, tests.
-8. **UI** is independent. The first eframe/egui desktop app uses the OpenGL backend to import an OBJ, inspect its geometry, suggest a fabric boundary, pick support vertices or edges, and export a pattern. The GUI and CLI share reference import and geometric development.
+8. **UI** is independent. The eframe/egui desktop app uses the OpenGL backend to display imported OBJ triangles with open edges and creases. Support picks edit a separate fabric boundary checked in the selected coverage projection. The skin triangulation and geometric development produce the sewing outline, and a checked uniform offset produces the cut line for preview, stock checks, and export. The GUI and CLI share reference import and geometric development.
 9. **Optional SolidCraft adapter** supplies reference geometry and source revision information to the fabric workflow. Pin an upstream revision, probe its APIs and licenses before reuse, and keep the core workspace independent.
 
 A future adjustable mannequin will use user-supplied body measurements to generate the same reference mesh representation. Keep the measurement definitions, units, and mannequin model version with that reference so the fabric workflow can reproduce it.
