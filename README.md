@@ -1,6 +1,6 @@
 # FabricCraft
 
-**Status: pre-alpha. The CLI can export a test outline for one flat mesh panel.**
+**Status: pre-alpha. The CLI can select a flat surface from an OBJ and export a full-scale test outline.**
 
 FabricCraft is a community-driven, open-source project for designing fabric panels on imported 3D models and producing 2D cutting and sewing patterns. It targets upholstery, fitted covers, garments and other textile applications. Create and edit the reference model in your CAD application, then bring it into FabricCraft to design the fabric. The long-term vision combines automatic panel segmentation, seam constraints, material-aware flattening, and gravity-driven cloth draping, with iterative inverse design.
 
@@ -35,7 +35,20 @@ From the workspace directory, export the included 200 × 100 mm example to a new
 cargo run --locked -p fabriccraft-cli -- panel examples/planar-panel-200x100.obj mm target/example-panel.svg
 ```
 
-For your own model, export a single flat surface as a triangulated Wavefront OBJ. Use a single connected mesh with one outline and no holes. Replace the input path and provide the CAD export's unit (`mm`, `cm`, `m` or `in`). Use a new output path. FabricCraft checks the geometry and prints the pattern dimensions. The SVG uses millimetres with a 1 mm margin around the outline. Print at 100% scale and check the result against a known CAD dimension. The outline is a geometric test with zero seam allowance.
+### Select a surface on a 3D model
+
+Export your CAD model as a triangulated Wavefront OBJ. Run `surfaces` to list the flat patches by number. The list gives each patch's object or group name, normal direction, and the center of its 3D bounds. The included box has six patches, with the top face listed first.
+
+```sh
+cargo run --locked -p fabriccraft-cli -- surfaces examples/reference-box.obj mm
+cargo run --locked -p fabriccraft-cli -- panel examples/reference-box.obj mm target/box-top.svg --surface 1 --fabric-mm 110 210
+```
+
+Replace the model path and use the unit specified by your CAD exporter (`mm`, `cm`, `m` or `in`). Use a new output path. A patch uses edge-connected triangles with shared vertex indices within one OBJ object or group. Export requires a single outline without holes. Surface numbers are repeatable for the same export. Re-exporting can change them.
+
+`--fabric-mm WIDTH LENGTH` is optional and always uses millimetres. Enter the **usable width across the fabric** first and the **available length along the roll** second. The check compares the outline's bounds against that rectangle as drawn and after a 90° turn. The box example fits the specified fabric only after a turn. The SVG records the result and keeps the outline's original orientation. Check the grain direction before turning a panel. This is a one-panel size check using zero seam allowance.
+
+The SVG uses millimetres with a 1 mm page margin around the outline. Print at 100% scale and compare it with a known CAD dimension.
 
 The prototype accepts up to 8 MiB, 100,000 triangles, and 4,096 boundary edges. Read the [geometry contract](docs/GEOMETRY_AND_FIXTURES.md) and [dependency review](docs/research/PLANAR_DEPENDENCIES.md) for algorithms and tolerances. The five bundled fabric profiles are illustrative metadata with empty measurement fields. [Material library specification](docs/materials/MATERIAL_LIBRARY.md)
 

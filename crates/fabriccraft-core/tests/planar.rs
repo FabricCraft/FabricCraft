@@ -2,7 +2,7 @@ use fabriccraft_core::{
     geometry::{
         Face, FaceId, ImportFrame, LengthUnit, Provenance, Surface, SurfaceId, Vertex, VertexId,
     },
-    planar::{PanelError, PlanarPanel},
+    planar::{PanelError, PlanarPanel, planar_patches},
 };
 
 fn mesh(points: &[[f64; 3]], triangles: &[[u64; 3]]) -> Surface {
@@ -38,6 +38,113 @@ fn close(observed: f64, expected: f64) {
         (observed - expected).abs() < 1e-9,
         "{observed} vs {expected}"
     );
+}
+
+#[test]
+fn extracts_each_box_side_from_a_closed_mesh() {
+    let surface = mesh(
+        &[
+            [0., 0., 0.],
+            [2., 0., 0.],
+            [2., 1., 0.],
+            [0., 1., 0.],
+            [0., 0., 3.],
+            [2., 0., 3.],
+            [2., 1., 3.],
+            [0., 1., 3.],
+        ],
+        &[
+            [4, 5, 6],
+            [4, 6, 7],
+            [0, 2, 1],
+            [0, 3, 2],
+            [0, 1, 5],
+            [0, 5, 4],
+            [1, 2, 6],
+            [1, 6, 5],
+            [2, 3, 7],
+            [2, 7, 6],
+            [3, 0, 4],
+            [3, 4, 7],
+        ],
+    );
+    let patches = planar_patches(&surface).unwrap();
+    assert_eq!(patches.len(), 6);
+    for (index, patch) in patches.iter().enumerate() {
+        assert_eq!(patch.seed(), FaceId((index * 2) as u64));
+        let panel = patch.panel().unwrap();
+        assert_eq!(panel.outline_mm().len(), 4);
+    }
+    assert_eq!(patches[0].normal(), [0., 0., 1.]);
+    assert_eq!(patches[0].center_mm(), [1., 0.5, 3.]);
+    assert_eq!(patches[0].panel().unwrap().size_mm(), [2., 1.]);
+}
+
+#[test]
+fn preserves_islands_and_rejects_holes_in_selected_patches() {
+    let surface = mesh(
+        &[
+            [0., 0., 0.],
+            [3., 0., 0.],
+            [3., 3., 0.],
+            [0., 3., 0.],
+            [1., 1., 0.],
+            [2., 1., 0.],
+            [2., 2., 0.],
+            [1., 2., 0.],
+            [10., 0., 0.],
+            [11., 0., 0.],
+            [10., 1., 0.],
+        ],
+        &[
+            [0, 1, 5],
+            [0, 5, 4],
+            [1, 2, 6],
+            [1, 6, 5],
+            [2, 3, 7],
+            [2, 7, 6],
+            [3, 0, 4],
+            [3, 4, 7],
+            [8, 9, 10],
+        ],
+    );
+    let patches = planar_patches(&surface).unwrap();
+    assert_eq!(patches.len(), 2);
+    assert_eq!(patches[0].triangle_count(), 8);
+    assert!(matches!(
+        patches[0].panel(),
+        Err(PanelError::SingleBoundaryRequired)
+    ));
+    assert_eq!(patches[1].triangle_count(), 1);
+    assert!(patches[1].panel().is_ok());
+}
+
+#[test]
+fn a_patch_cannot_keep_growing_as_the_plane_drifts() {
+    let surface = mesh(
+        &[
+            [0., 0., 0.],
+            [0., 1., 0.],
+            [1., 0., 0.],
+            [1., 1., 0.],
+            [2., 0., 0.00075],
+            [2., 1., 0.00075],
+            [3., 0., 0.0015],
+            [3., 1., 0.0015],
+        ],
+        &[
+            [0, 2, 3],
+            [0, 3, 1],
+            [2, 4, 5],
+            [2, 5, 3],
+            [4, 6, 7],
+            [4, 7, 5],
+        ],
+    );
+    let patches = planar_patches(&surface).unwrap();
+    assert_eq!(patches.len(), 2);
+    assert_eq!(patches[0].triangle_count(), 4);
+    assert_eq!(patches[1].triangle_count(), 2);
 }
 
 #[test]

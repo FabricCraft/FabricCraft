@@ -5,7 +5,11 @@ use std::fmt;
 
 use robust::{Coord, orient2d};
 
-use crate::geometry::{FaceId, Surface, VertexId};
+use crate::geometry::{FaceId, GeometryError, Surface, VertexId};
+
+mod patches;
+
+pub use patches::{PlanarPatch, planar_patches};
 
 const PLANAR_TOLERANCE_MM: f64 = 0.001;
 const MAX_COORDINATE_MM: f64 = 1.0e9;
@@ -45,25 +49,16 @@ impl PlanarPanel {
             return Err(PanelError::CoordinateRange);
         }
 
-        let mut axis = [0.; 3];
-        let mut plane_origin = [0.; 3];
-        let mut best_area = 0.;
-        for face in &record.faces {
-            let [a, b, c] = face.vertices.map(|id| used[&id]);
-            let normal = cross(sub(b, a), sub(c, a));
-            let area = norm(normal);
-            if area > best_area {
-                axis = normal;
-                best_area = area;
-                plane_origin = a;
-            }
-        }
-        if best_area == 0. {
-            return Err(PanelError::ProjectionPrecision);
-        }
-        let normal = axis.map(|n| n / best_area);
+        let plane = record
+            .faces
+            .iter()
+            .rev()
+            .filter_map(|face| Plane::through(face.vertices.map(|id| used[&id])))
+            .max_by(|a, b| a.twice_area.total_cmp(&b.twice_area))
+            .ok_or(PanelError::ProjectionPrecision)?;
+        let normal = plane.normal;
         for (&vertex, &position) in &used {
-            let distance_mm = dot(sub(position, plane_origin), normal).abs();
+            let distance_mm = plane.distance(position);
             if distance_mm > PLANAR_TOLERANCE_MM {
                 return Err(PanelError::NonPlanar {
                     vertex,
@@ -229,6 +224,29 @@ fn norm([x, y, z]: [f64; 3]) -> f64 {
     x.hypot(y).hypot(z)
 }
 
+#[derive(Clone, Copy)]
+struct Plane {
+    origin: [f64; 3],
+    normal: [f64; 3],
+    twice_area: f64,
+}
+
+impl Plane {
+    fn through([a, b, c]: [[f64; 3]; 3]) -> Option<Self> {
+        let axis = cross(sub(b, a), sub(c, a));
+        let twice_area = norm(axis);
+        (twice_area > 0.).then(|| Self {
+            origin: a,
+            normal: axis.map(|value| value / twice_area),
+            twice_area,
+        })
+    }
+
+    fn distance(self, point: [f64; 3]) -> f64 {
+        dot(sub(point, self.origin), self.normal).abs()
+    }
+}
+
 #[derive(Debug)]
 pub enum PanelError {
     NonPlanar { vertex: VertexId, distance_mm: f64 },
@@ -236,6 +254,7 @@ pub enum PanelError {
     BoundaryTooLarge,
     CoordinateRange,
     ProjectionPrecision,
+    InvalidPatch(GeometryError),
     FoldedFace(FaceId),
     IntersectingOutline,
 }
@@ -266,6 +285,7 @@ impl fmt::Display for PanelError {
                 f,
                 "panel is too small to project at the available precision"
             ),
+            Self::InvalidPatch(error) => write!(f, "{error}"),
             Self::FoldedFace(face) => write!(
                 f,
                 "triangle {} folds over or collapses in the plane",
@@ -276,4 +296,11 @@ impl fmt::Display for PanelError {
     }
 }
 
-impl std::error::Error for PanelError {}
+impl std::error::Error for PanelError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidPatch(error) => Some(error),
+            _ => None,
+        }
+    }
+}

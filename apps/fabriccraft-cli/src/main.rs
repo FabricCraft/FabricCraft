@@ -2,7 +2,7 @@ mod panel;
 
 use std::{env, path::Path, process::ExitCode};
 
-const USAGE: &str = "Usage: fabriccraft-cli panel <mesh.obj> <mm|cm|m|in> <pattern.svg>";
+const USAGE: &str = "Usage:\n  fabriccraft-cli surfaces <mesh.obj> <mm|cm|m|in>\n  fabriccraft-cli panel <mesh.obj> <mm|cm|m|in> <pattern.svg> [--surface NUMBER] [--fabric-mm WIDTH LENGTH]";
 
 fn main() -> ExitCode {
     let args: Vec<_> = env::args_os().skip(1).collect();
@@ -16,8 +16,11 @@ fn main() -> ExitCode {
             println!("{USAGE}");
             Ok(())
         }
-        [command, mesh, unit, svg] if command == "panel" => {
-            panel::export(Path::new(mesh), unit.to_str(), Path::new(svg))
+        [command, mesh, unit] if command == "surfaces" => {
+            panel::list_surfaces(Path::new(mesh), unit.to_str())
+        }
+        [command, mesh, unit, svg, options @ ..] if command == "panel" => {
+            panel::export(Path::new(mesh), unit.to_str(), Path::new(svg), options)
         }
         _ => Err(USAGE.into()),
     };

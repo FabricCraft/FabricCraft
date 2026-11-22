@@ -5,7 +5,7 @@ Milestones are acceptance-gated, not date commitments.
 - **M0 Foundation:** compile Rust workspace; upstream compatibility/license matrix; canonical reference mesh schema; CI; first smoke test with an existing mesh.
 - **M1 Flattening:** planar and developable surfaces; strain and distortion diagnostics; deterministic SVG; regression tests.
 - **M2 Automatic panels:** curvature analysis, candidate seams, constrained segmentation, score comparisons.
-- **M3 Manufacturing:** allowances, notches, grain, edge pairing, DXF, physical sewn-cushion validation.
+- **M3 Manufacturing:** allowances, notches, grain, edge pairing, layout within usable fabric width and length, DXF, physical sewn-cushion validation.
 - **M4 Basic drape:** gravity, rigid obstacle collision, fixed points, friction, reproducible convergence tests.
 - **M5 Material-aware optimization:** measured warp/weft and shear properties, inverse-design iteration.
 - **M6 Advanced assembly:** darts, pleats, gathering, sewn seams, self-contact.

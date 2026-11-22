@@ -17,7 +17,9 @@ Validate units, finite coordinates, unique IDs, references, distinct triangle co
 
 The core accepts a list of 3D points and triangles in memory. Each triangle names its three points by ID, so reordering the input keeps the same connections. Callers supply the source identity, length unit, axis convention and translation. The library accepts millimetres, centimetres, metres and inches. It converts positions to millimetres and reverses triangle winding when the coordinate change reverses handedness.
 
-`Surface::import` performs that conversion once. `Surface::from_record` checks a saved canonical record directly, which keeps a second import from rescaling its coordinates. Both entry points validate geometry and topology. The implemented frame supports signed axis permutations and translation. General rotations, file-format adapters, per-entity source references and panel/seam records are future work. The [core API](../crates/fabriccraft-core/src/geometry/mod.rs) includes an executable example.
+`Surface::import` performs that conversion once. `Surface::from_record` checks a saved canonical record directly, which keeps a second import from rescaling its coordinates. Both entry points validate geometry and topology. The implemented frame supports signed axis permutations and translation. General rotations, additional file formats, per-entity source references and panel/seam records are future work. The [core API](../crates/fabriccraft-core/src/geometry/mod.rs) includes an executable example.
+
+The `surfaces` command groups edge-connected triangles within 0.001 mm of a fixed seed face's plane, provided their normals point to the same side of that plane. A fixed seed prevents small changes from accumulating across a curved mesh. The exporter validates the selected patch separately for planarity, orientation and a simple closed boundary. OBJ groups are treated as separate surfaces and vertices are matched by index within each group.
 
 ## First headless fixtures
 
@@ -26,6 +28,7 @@ Generate these surfaces from recorded parameters, tessellation rules and seam ch
 | Fixture | Oracle and expected behavior |
 | --- | --- |
 | Triangulated rectangle | Compare against its original 2D coordinates after translation and rotation. Preserve edge lengths, signed orientation and area. Re-import in a second length unit and rotated frame, then compare canonical coordinates. Round-trip stable IDs and face winding. |
+| Closed box | Identify six patches in a single mesh and export each patch at one-to-one scale. The [simple box](../examples/reference-box.obj) has a 200 × 100 mm top face. An OBJ converted from the [SolidCore probe](research/SOLIDCRAFT.md) produced six correct outlines across 108 triangles. |
 | Cylinder cut along one generator | Use the lateral faces of a regular prism of circumradius `R`, height `H` and `n` sides. Each developed strip has width `2 R sin(π/n)`. The rectangle spans `n` such widths and height `H`. Check paired seam lengths and independent panel-local IDs on the cut. |
 | Cone cut from rim to apex | Use the lateral triangles of a pyramid with a regular base and equal slant edges. The development is a fan of the original triangles. Sum their apex angles for the sector angle and compare each rim edge with its original chord. |
 | Triangulated hemisphere | Keep one patch with an interior vertex of positive angle deficit. Measure the distortion required to lay it flat. An isometry request must report the incompatibility. |
