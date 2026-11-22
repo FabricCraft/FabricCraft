@@ -1,6 +1,7 @@
 //! FabricCraft's headless geometry domain.
 
 pub mod geometry;
+pub mod planar;
 
 /// Returns the current prototype schema version.
 pub fn schema_version() -> u32 {

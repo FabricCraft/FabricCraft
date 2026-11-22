@@ -7,8 +7,24 @@ name = "fabriccraft-cli"
 version = "0.0.1"
 dependencies = [
  "fabriccraft-core",
+ "tobj",
 ]
 
 [[package]]
 name = "fabriccraft-core"
 version = "0.0.1"
+dependencies = [
+ "robust",
+]
+
+[[package]]
+name = "robust"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e27ee8bb91ca0adcf0ecb116293afa12d393f9c2b9b9cd54d33e8078fe19839"
+
+[[package]]
+name = "tobj"
+version = "4.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6eb8e04167c1c0c76b5de63226fd733485ad63ef71e40de31e16272f47b099e2"
